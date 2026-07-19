@@ -1,11 +1,19 @@
-package com.bharath.meditrack.model;
+package com.venkat.meditrack.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 
-// SMELL: @Data on a JPA entity; everything public via getters/setters.
-@Data
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "specialties")
 public class Specialty {

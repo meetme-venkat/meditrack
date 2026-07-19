@@ -1,7 +1,8 @@
-package com.bharath.meditrack.repo;
+package com.venkat.meditrack.repository;
 
-import com.bharath.meditrack.model.Patient;
+import com.venkat.meditrack.entity.Patient;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PatientRepository extends JpaRepository<Patient, Long> {
+    boolean existsByEmail(String email);
 }

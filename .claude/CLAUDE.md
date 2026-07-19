@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 MediTrack is a clinic appointment & billing REST API built with Spring Boot. **This is an intentionally-messy course starter** (`README.md`): it compiles and runs, but deliberately violates the conventions the assignment teaches. The `// SMELL:` comments scattered through the code mark the anti-patterns on purpose — they are the assignment backlog, not bugs to leave alone. When refactoring, expect to *remove* these smells and their comments.
 
-Remaining intentional smells (from README + inline comments): `@Data` on JPA entities; entities returned straight from controllers (no DTOs); all business logic in controllers (no service layer); field injection with `@Autowired`; no exception handling (missing rows return `null`, generic `RuntimeException` → HTTP 500); free-text `status` with no transition rules; `cancel` doesn't restore the doctor's slot or refund payment; plaintext DB password; no validation, no tests, no API docs. (Already fixed: money is now `BigDecimal`; DB is PostgreSQL; `ddl-auto=validate`.)
+The convention refactor is now largely done: constructor injection, `BigDecimal` money, DTOs in/out of controllers, a `service/` layer, `/api/v1` routing, a `GlobalExceptionHandler` returning `ErrorResponse`, bean validation, springdoc Swagger UI, PostgreSQL, and `ddl-auto=validate` are all in place, with unit + `@WebMvcTest` tests. Remaining intentional smells still open: free-text appointment `status` with no transition rules; `cancel` doesn't restore the doctor's slot or refund payment; plaintext DB password in `application.properties`. Entities keep `createdAt/updatedAt` set in code (no auditing).
 
 ## Commands
 
@@ -24,11 +24,15 @@ Run `db/meditrack_schema.sql` in psql or pgAdmin to create `meditrack_db` with t
 
 ## Architecture
 
-Single-module Maven project, package root `com.bharath.meditrack`. Standard flat Spring layering, currently missing its middle:
+Single-module Maven project, package root `com.venkat.meditrack`. Layered:
 
-- `controller/` — `AppointmentController` (book/cancel/list), `CatalogController` (specialties + doctors, two resources in one class), `PatientController`. **These hold all business logic today**; the intended refactor introduces a `service/` layer and moves logic there.
-- `model/` — JPA entities *and* one confusingly-named entity: `AppointmentService` is the **appointment line-item entity** (`appointment_services` table), NOT a Spring service. Don't create a service class with a colliding name. Entities: `Specialty` → `Doctor` (ManyToOne) → `Appointment` (ManyToOne patient+doctor) → `AppointmentService` line items (OneToMany) + `Payment` (OneToOne). All associations are `FetchType.EAGER`.
-- `repo/` — Spring Data JPA repositories. `AppointmentRepository.countByDoctorAndScheduledDate` backs the per-doctor daily-capacity check in `book`.
+- `controller/` — thin: `SpecialtyController`, `DoctorController`, `PatientController`, `AppointmentController`. They only bind HTTP + `@Valid` DTOs and delegate to services. All under `/api/v1`; each carries a springdoc `@Tag` for its Swagger group.
+- `service/` — business logic + entity↔DTO mapping: `SpecialtyService`, `DoctorService`, `PatientService`, and `BookingService` (booking/cancel; **named BookingService, not AppointmentService, because that name is the line-item entity**).
+- `dto/` — request DTOs (`@Data`, bean-validation constraints) and response DTOs (`@Data`, with a static `from(entity)` mapper).
+- `entity/` — JPA entities (`@Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor`). `AppointmentService` here is the **line-item entity** (`appointment_services` table), NOT a Spring service. Graph: `Specialty` → `Doctor` (ManyToOne) → `Appointment` (ManyToOne patient+doctor) → `AppointmentService` line items (OneToMany) + `Payment` (OneToOne). All associations `FetchType.EAGER`.
+- `repository/` — Spring Data JPA. `AppointmentRepository.countByDoctorAndScheduledDate` backs the daily-capacity rule; `existsBy*` finders back duplicate checks.
+- `exception/` — `GlobalExceptionHandler` (`@RestControllerAdvice`) maps `ResourceNotFoundException`→404, `DuplicateResourceException`→409, `BusinessRuleException`→422, validation→400, else→500, all as `ErrorResponse` JSON.
+- `config/` — `OpenApiConfig` (springdoc; UI at `/swagger-ui.html`, spec at `/v3/api-docs`).
 
 Note `Appointment`'s PK column is `appointment_id` (not `id`); other entities use `id`.
 
@@ -45,3 +49,55 @@ These are **required** for this project and are non-negotiable — new and refac
 - **Schema ownership:** `spring.jpa.hibernate.ddl-auto=validate`. Tables come from `db/meditrack_schema.sql`; Hibernate must not create or mutate schema. Entity mappings must match the SQL schema.
 
 These align with the user's global conventions (`~/.claude/CLAUDE.md`): entities annotated field-by-field (`@Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor`, never `@Data`); DTOs use `@Data @Builder @NoArgsConstructor @AllArgsConstructor`; tests in JUnit 5 + Mockito + AssertJ (`assertThat`, never `assertEquals`) + MockMvc. Show diffs rather than full rewrites, and ask before deleting files.
+
+# meditrack-starter
+
+## Stack
+- Java 21
+- Spring Boot 4.1.0
+- Maven
+- PostgreSQL
+
+## Package Structure
+Base package: `com.venkat.meditrack`
+
+Sub-packages:
+- `controller`
+- `service`
+- `repository`
+- `entity`
+- `dto`
+- `exception`
+- `config`
+
+## Architecture Rules
+- Always use DTOs in controllers — never expose entities directly.
+- All business logic lives in the service layer — keep controllers thin.
+- Centralised exception handling via `GlobalExceptionHandler`.
+- All endpoints prefixed with `/api/v1/`.
+
+## Lombok
+- `@RequiredArgsConstructor` for injection everywhere (with `final` fields). No `@Autowired`.
+- Entities: `@Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor`.
+- DTOs: `@Data @Builder @NoArgsConstructor @AllArgsConstructor`.
+
+## Exceptions
+All handled in `GlobalExceptionHandler`, returning `ErrorResponse` JSON:
+
+| Exception                    | HTTP Status |
+|------------------------------|-------------|
+| `ResourceNotFoundException`  | 404         |
+| `BusinessRuleException`      | 422         |
+| `DuplicateResourceException` | 409         |
+| `AccessDeniedException`      | 403         |
+
+## Database
+- PostgreSQL, database `meditrack_db`.
+- `ddl-auto=validate` — tables come from `db/meditrack_schema.sql`, not Hibernate.
+
+## Commands
+No Maven wrapper is bundled yet, so use system `mvn` (swap `mvn`→`./mvnw` once a wrapper is added):
+- Run: `mvn spring-boot:run`
+- Test: `mvn test`
+- Compile check: `mvn clean compile`
+

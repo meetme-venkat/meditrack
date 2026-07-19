@@ -1,11 +1,21 @@
-package com.bharath.meditrack.model;
+package com.venkat.meditrack.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.math.BigDecimal;
 
-@Data
+// Appointment line-item ENTITY (appointment_services table) — not a Spring service.
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "appointment_services")
 public class AppointmentService {
