@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 MediTrack is a clinic appointment & billing REST API built with Spring Boot. **This is an intentionally-messy course starter** (`README.md`): it compiles and runs, but deliberately violates the conventions the assignment teaches. The `// SMELL:` comments scattered through the code mark the anti-patterns on purpose — they are the assignment backlog, not bugs to leave alone. When refactoring, expect to *remove* these smells and their comments.
 
-Known intentional smells (from README + inline comments): money as `double` instead of `BigDecimal`; `@Data` on JPA entities; entities returned straight from controllers (no DTOs); all business logic in controllers (no service layer); field injection with `@Autowired`; no exception handling (missing rows return `null`, generic `RuntimeException` → HTTP 500); free-text `status` with no transition rules; `cancel` doesn't restore the doctor's slot or refund payment; `ddl-auto=update` and a plaintext DB password; no validation, no tests, no API docs.
+Remaining intentional smells (from README + inline comments): `@Data` on JPA entities; entities returned straight from controllers (no DTOs); all business logic in controllers (no service layer); field injection with `@Autowired`; no exception handling (missing rows return `null`, generic `RuntimeException` → HTTP 500); free-text `status` with no transition rules; `cancel` doesn't restore the doctor's slot or refund payment; plaintext DB password; no validation, no tests, no API docs. (Already fixed: money is now `BigDecimal`; DB is PostgreSQL; `ddl-auto=validate`.)
 
 ## Commands
 
