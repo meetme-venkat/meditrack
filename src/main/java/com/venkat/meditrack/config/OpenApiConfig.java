@@ -25,7 +25,8 @@ public class OpenApiConfig {
                         new Tag().name("Specialty Management").description("Medical specialties catalog"),
                         new Tag().name("Doctor Management").description("Doctors and their availability"),
                         new Tag().name("Patient Management").description("Patient registration and lookup"),
-                        new Tag().name("Appointment Management").description("Booking and cancelling appointments")
+                        new Tag().name("Appointment Management").description("Booking and cancelling appointments"),
+                        new Tag().name("Feedback Management").description("Patient ratings and comments on completed appointments")
                 ));
     }
 }

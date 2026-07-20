@@ -1,5 +1,6 @@
 package com.venkat.meditrack.controller;
 
+import com.venkat.meditrack.dto.DoctorRatingResponse;
 import com.venkat.meditrack.dto.DoctorRequest;
 import com.venkat.meditrack.dto.DoctorResponse;
 import com.venkat.meditrack.service.DoctorService;
@@ -27,6 +28,11 @@ public class DoctorController {
     @GetMapping("/{id}")
     public DoctorResponse get(@PathVariable Long id) {
         return doctorService.findById(id);
+    }
+
+    @GetMapping("/{id}/rating")
+    public DoctorRatingResponse rating(@PathVariable Long id) {
+        return doctorService.findRating(id);
     }
 
     @PostMapping
