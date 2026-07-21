@@ -1,0 +1,56 @@
+{
+  "skill_name": "production-readiness",
+  "evals": [
+    {
+      "id": 0,
+      "name": "ship-verdict-before-tag",
+      "prompt": "before I tag v1.0 and hand meditrack off to someone else, can you tell me if it's actually ready to ship? I want to know what would blow up.",
+      "expected_output": "A severity-grouped readiness report with an explicit GO/NO-GO verdict, backed by a real mvn build run and file:line evidence.",
+      "files": [],
+      "assertions": [
+        "States an unambiguous GO or NO-GO verdict (not hedged)",
+        "Quotes real build output proving mvn was actually run",
+        "Groups findings by severity with blockers first",
+        "At least one finding cites a concrete file path with a line number",
+        "Names untested classes by name (PatientService, SpecialtyService, DoctorController, PatientController, SpecialtyController)",
+        "At least one finding explains the production consequence, not just which rule is broken",
+        "Left the repository source files unmodified (read-only review)",
+        "Flags a reproducibility/handoff risk: missing Maven wrapper or pom groupId (com.bharath) not matching com.venkat packages"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "pre-merge-build-sanity",
+      "prompt": "quick sanity check on the build — is anything broken or untested that i should worry about before I merge to main?",
+      "expected_output": "Runs the build, reports pass/fail with the real Surefire numbers, names the untested services and controllers, gives a verdict.",
+      "files": [],
+      "assertions": [
+        "States an unambiguous GO or NO-GO verdict (not hedged)",
+        "Quotes real build output proving mvn was actually run",
+        "Groups findings by severity with blockers first",
+        "At least one finding cites a concrete file path with a line number",
+        "Names untested classes by name (PatientService, SpecialtyService, DoctorController, PatientController, SpecialtyController)",
+        "At least one finding explains the production consequence, not just which rule is broken",
+        "Left the repository source files unmodified (read-only review)",
+        "Frames the verdict in merge-relevant terms and reports actual test counts (22 run, 0 failed)"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "false-confidence-in-tests",
+      "prompt": "we're deploying meditrack to the clinic's staging box on friday. is there anything in the test suite thats giving me a false sense of security?",
+      "expected_output": "Identifies coverage gaps (PatientService, SpecialtyService, three untested controllers) and what a green build does not prove, rather than only listing tests that exist.",
+      "files": [],
+      "assertions": [
+        "States an unambiguous GO or NO-GO verdict (not hedged)",
+        "Quotes real build output proving mvn was actually run",
+        "Groups findings by severity with blockers first",
+        "At least one finding cites a concrete file path with a line number",
+        "Names untested classes by name (PatientService, SpecialtyService, DoctorController, PatientController, SpecialtyController)",
+        "At least one finding explains the production consequence, not just which rule is broken",
+        "Left the repository source files unmodified (read-only review)",
+        "Names at least one gap a green build cannot catch, beyond listing untested classes"
+      ]
+    }
+  ]
+}
