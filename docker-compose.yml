@@ -1,0 +1,47 @@
+# Local dev stack: MediTrack API + PostgreSQL.
+# Secrets/config come from .env (see .env.example). Do not hardcode secrets here.
+#   docker compose up --build
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: meditrack-postgres
+    # POSTGRES_DB / POSTGRES_USER / POSTGRES_PASSWORD are read from .env.
+    env_file:
+      - .env
+    ports:
+      # Host 5440 -> container 5432, so it doesn't clash with a local PostgreSQL.
+      - "${POSTGRES_HOST_PORT:-5440}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Runs ONLY on first start (empty data dir). Creates schema + seed in POSTGRES_DB.
+      - ./db/docker-initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: meditrack:latest
+    container_name: meditrack-api
+    # Wait for Postgres to pass its healthcheck before booting (ddl-auto=validate
+    # opens a DB connection at startup and fails fast otherwise).
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Container-to-container: reach Postgres by service name on its internal port.
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${API_HOST_PORT:-9090}:9090"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
